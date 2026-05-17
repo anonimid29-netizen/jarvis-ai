@@ -1,85 +1,77 @@
 from flask import Flask
 from openai import OpenAI
 import os
+import threading
 
-app = Flask(__name__)
-
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
-
-@app.route("/")
-def home():
-    return "Jarvis AI Running 🚀"
-
-@app.route("/ai")
-def ai():
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        messages=[{"role":"user","content":"buat konten facebook"}]
-    )
-    return response.choices[0].message.content
-
-app.run(host="0.0.0.0", port=8080)
-
-import os
-from openai import OpenAI
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# ======================
+# CONFIG
+# ======================
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
+client = OpenAI(api_key=OPENAI_API_KEY)
+
 # ======================
-# AI RESPONSE
+# FLASK SERVER (Railway keep alive)
 # ======================
+
+web = Flask(__name__)
+
+@web.route("/")
+def home():
+    return "🤖 Jarvis AI Online"
+
+# ======================
+# AI FUNCTION
+# ======================
+
 async def ai_response(text):
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
-            {"role": "system", "content": "Kamu adalah Jarvis, AI assistant pribadi yang cerdas, cepat dan membantu."},
-            {"role": "user", "content": text}
+            {"role":"system","content":"Kamu adalah Jarvis, AI assistant pribadi yang pintar dan cepat."},
+            {"role":"user","content":text}
         ]
     )
     return response.choices[0].message.content
 
 # ======================
-# COMMANDS
+# TELEGRAM COMMANDS
 # ======================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 Jarvis Online.\nKetik /help")
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("""
-Perintah Jarvis:
-/ai [pertanyaan]
-/status
-""")
-
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Sistem AI berjalan normal.")
+    await update.message.reply_text("🤖 Jarvis Online!")
 
 async def ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = " ".join(context.args)
 
     if not text:
-        await update.message.reply_text("Tulis pertanyaan setelah /ai")
+        await update.message.reply_text("Gunakan: /ai pertanyaan")
         return
 
     reply = await ai_response(text)
     await update.message.reply_text(reply)
 
 # ======================
-# MAIN
+# TELEGRAM BOT RUNNER
 # ======================
 
-app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+def run_telegram():
+    bot = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("help", help_command))
-app.add_handler(CommandHandler("status", status))
-app.add_handler(CommandHandler("ai", ai_command))
+    bot.add_handler(CommandHandler("start", start))
+    bot.add_handler(CommandHandler("ai", ai_command))
 
-app.run_polling()
+    bot.run_polling()
+
+# ======================
+# START BOTH SYSTEMS
+# ======================
+
+if __name__ == "__main__":
+    threading.Thread(target=run_telegram).start()
+    web.run(host="0.0.0.0", port=8080)
