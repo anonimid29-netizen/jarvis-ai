@@ -62,6 +62,8 @@ async def ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ======================
 
 def run_telegram():
+    print("🚀 Starting Telegram Bot...")
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
@@ -70,6 +72,7 @@ def run_telegram():
     bot.add_handler(CommandHandler("start", start))
     bot.add_handler(CommandHandler("ai", ai_command))
 
+    print("✅ Telegram Bot Running")
     bot.run_polling()
 
 # ======================
