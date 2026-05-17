@@ -1,23 +1,23 @@
-import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
+from flask import Flask
 from openai import OpenAI
+import os
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+app = Flask(__name__)
 
-async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_text = update.message.text
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
+@app.route("/")
+def home():
+    return "Jarvis AI Running 🚀"
+
+@app.route("/ai")
+def ai():
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
-        messages=[{"role": "user", "content": user_text}]
+        messages=[{"role":"user","content":"buat konten facebook"}]
     )
+    return response.choices[0].message.content
 
-    await update.message.reply_text(
-        response.choices[0].message.content
-    )
-
-app = ApplicationBuilder().token(os.getenv("BOT_TOKEN")).build()
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply))
-
-app.run_polling()
+app.run(host="0.0.0.0", port=8080)
