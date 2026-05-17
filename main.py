@@ -76,9 +76,15 @@ def run_telegram():
     bot.run_polling()
 
 # ======================
-# START BOTH SYSTEMS
+# START SYSTEM
 # ======================
 
-if __name__ == "__main__":
-    threading.Thread(target=run_telegram).start()
+def run_flask():
     web.run(host="0.0.0.0", port=8080)
+
+if __name__ == "__main__":
+    print("🚀 Starting Flask KeepAlive...")
+    threading.Thread(target=run_flask).start()
+
+    print("🤖 Starting Telegram Bot...")
+    run_telegram()
