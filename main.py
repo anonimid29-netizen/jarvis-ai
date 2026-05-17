@@ -5,7 +5,6 @@ import threading
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-import asyncio
 
 # ======================
 # CONFIG
@@ -17,7 +16,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ======================
-# FLASK SERVER (Railway keep alive)
+# FLASK KEEP ALIVE SERVER
 # ======================
 
 web = Flask(__name__)
@@ -25,6 +24,9 @@ web = Flask(__name__)
 @web.route("/")
 def home():
     return "🤖 Jarvis AI Online"
+
+def run_web():
+    web.run(host="0.0.0.0", port=8080)
 
 # ======================
 # AI FUNCTION
@@ -34,7 +36,7 @@ async def ai_response(text):
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
-            {"role":"system","content":"Kamu adalah Jarvis, AI assistant pribadi yang pintar dan cepat."},
+            {"role":"system","content":"Kamu adalah Jarvis, AI assistant pribadi."},
             {"role":"user","content":text}
         ]
     )
@@ -58,33 +60,21 @@ async def ai_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(reply)
 
 # ======================
-# TELEGRAM BOT RUNNER
+# MAIN PROGRAM
 # ======================
-
-def run_telegram():
-    print("🚀 Starting Telegram Bot...")
-
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-
-    bot = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
-    bot.add_handler(CommandHandler("start", start))
-    bot.add_handler(CommandHandler("ai", ai_command))
-
-    print("✅ Telegram Bot Running")
-    bot.run_polling()
-
-# ======================
-# START SYSTEM
-# ======================
-
-def run_flask():
-    web.run(host="0.0.0.0", port=8080)
 
 if __name__ == "__main__":
-    print("🚀 Starting Flask KeepAlive...")
-    threading.Thread(target=run_flask).start()
 
-    print("🤖 Starting Telegram Bot...")
-    run_telegram()
+    print("🚀 Starting Flask KeepAlive...")
+    threading.Thread(target=run_web).start()
+
+    print("🚀 Starting Telegram Bot...")
+
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("ai", ai_command))
+
+    print("✅ Telegram Bot Running")
+
+    app.run_polling()
